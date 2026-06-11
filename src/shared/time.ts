@@ -10,9 +10,10 @@ export function addMinutes(date: Date, minutes: number): Date {
   return result
 }
 
-export function formatRelativeTime(date: Date): string {
+export function formatRelativeTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date
   const now = new Date()
-  const diff = now.getTime() - date.getTime()
+  const diff = now.getTime() - d.getTime()
   const seconds = Math.floor(diff / 1000)
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)

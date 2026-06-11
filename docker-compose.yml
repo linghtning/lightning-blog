@@ -1,37 +1,41 @@
-version: '3.8'
+name: lightning-blog
 
 services:
   blog-db:
     image: postgres:17-alpine
+    container_name: lightning-blog-db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: blog
       POSTGRES_USER: blog
-      POSTGRES_PASSWORD: blog_password
-    ports:
-      - '15404:5432'
+      POSTGRES_PASSWORD: blog
     volumes:
-      - blog-db-data:/var/lib/postgresql/data
+      - lightning_blog_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U blog']
+      test: ['CMD-SHELL', 'pg_isready -U blog -d blog']
       interval: 10s
       timeout: 5s
       retries: 5
 
   blog:
     build: .
-    ports:
-      - '10004:10004'
-    environment:
-      NODE_ENV: production
-      PORT: 10004
-      DATABASE_URL: postgresql://blog:blog_password@blog-db:5432/blog
-      PUBLIC_BASE_URL: http://blog.orgcatfun.site
-      PORTAL_BASE_URL: http://orgcatfun.site
-      SSO_CALLBACK_URL: http://blog.orgcatfun.site/auth/callback
-      OIDC_CLIENT_ID: blog
+    container_name: lightning-blog
+    restart: unless-stopped
     depends_on:
       blog-db:
         condition: service_healthy
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: postgres://blog:blog@blog-db:5432/blog
+      PORT: 10004
+    ports:
+      - '10004:10004'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:10004/api/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  blog-db-data:
+  lightning_blog_pgdata:

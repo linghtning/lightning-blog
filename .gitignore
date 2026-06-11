@@ -4,3 +4,5 @@ dist
 .env
 .env.*
 *.md
+*.js
+*.tsbuildinfo

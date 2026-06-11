@@ -10,6 +10,8 @@ import { AdminPage } from '../pages/admin/AdminPage'
 import { ArticleManagePage } from '../pages/admin/articles/ArticleManagePage'
 import { NewArticlePage } from '../pages/admin/articles/new/NewArticlePage'
 import { EditArticlePage } from '../pages/admin/articles/edit/EditArticlePage'
+import { CategoryManagePage } from '../pages/admin/categories/CategoryManagePage'
+import { TagManagePage } from '../pages/admin/tags/TagManagePage'
 
 export function App() {
   const [route, setRoute] = useState(matchRoute(window.location.pathname))
@@ -51,6 +53,10 @@ export function App() {
         return <NewArticlePage />
       case 'admin-article-edit':
         return <EditArticlePage id={route.id} />
+      case 'admin-categories':
+        return <CategoryManagePage />
+      case 'admin-tags':
+        return <TagManagePage />
       case 'callback':
         return <div>处理登录中...</div>
       case 'access-denied':

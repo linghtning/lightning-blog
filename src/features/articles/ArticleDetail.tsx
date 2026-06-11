@@ -9,9 +9,9 @@ type ArticleDetailProps = {
 
 export function ArticleDetail({ article }: ArticleDetailProps) {
   return (
-    <article className="prose prose-invert max-w-none">
+    <article>
       <h1 className="text-4xl font-bold mb-4">{article.title}</h1>
-      
+
       <div className="flex items-center gap-4 text-sm text-muted mb-8">
         <span className="flex items-center gap-1">
           <Calendar className="w-4 h-4" />
@@ -23,7 +23,7 @@ export function ArticleDetail({ article }: ArticleDetailProps) {
         </span>
       </div>
 
-      <div className="prose prose-invert prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-code:text-primary prose-pre:bg-card">
+      <div className="markdown-body">
         <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
           {article.content}
         </ReactMarkdown>

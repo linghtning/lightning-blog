@@ -212,6 +212,15 @@ export function createServerApp(runtime: BlogRuntime) {
     return context.json({ category })
   })
 
+  app.delete('/api/categories/:id', async (context) => {
+    const user = await requireProfile(context, runtime)
+    if (!user) {
+      return context.json({ error: 'app_session_required' }, 401)
+    }
+    await runtime.store.deleteCategory(context.req.param('id'))
+    return context.json({ ok: true })
+  })
+
   // Tag routes
   app.get('/api/tags', async (context) => {
     const tags = await runtime.store.listTags()
@@ -239,6 +248,15 @@ export function createServerApp(runtime: BlogRuntime) {
       .parse(await context.req.json())
     const tag = await runtime.store.createTag(input)
     return context.json({ tag })
+  })
+
+  app.delete('/api/tags/:id', async (context) => {
+    const user = await requireProfile(context, runtime)
+    if (!user) {
+      return context.json({ error: 'app_session_required' }, 401)
+    }
+    await runtime.store.deleteTag(context.req.param('id'))
+    return context.json({ ok: true })
   })
 
   // Search route

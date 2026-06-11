@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: lightning-blog-deploy
+  cancel-in-progress: false
+
 jobs:
   verify-and-deploy:
     runs-on: ubuntu-latest
@@ -71,22 +75,26 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          timeout: 120s
           script: |
             set -e
-            mkdir -p /opt/lightning/lightning-blog
-            cd /opt/lightning/lightning-blog
-            rm -rf repo
-            mkdir -p repo
-            tar -xzf release.tar.gz -C repo
-            cd repo
-            cp ../.env.production .env.production
-            docker compose up -d --build
-            for i in $(seq 1 30); do
-              if curl --fail --silent --show-error http://127.0.0.1:10004/api/health; then
-                exit 0
-              fi
-              sleep 2
-            done
-            docker ps -a
-            docker logs lightning-blog --tail 120
-            exit 1
+            (
+              flock -w 600 9
+              mkdir -p /opt/lightning/lightning-blog
+              cd /opt/lightning/lightning-blog
+              rm -rf repo
+              mkdir -p repo
+              tar -xzf release.tar.gz -C repo
+              cd repo
+              cp ../.env.production .env.production
+              docker compose up -d --build
+              for i in $(seq 1 30); do
+                if curl --fail --silent --show-error http://127.0.0.1:10004/api/health; then
+                  exit 0
+                fi
+                sleep 2
+              done
+              docker ps -a
+              docker logs lightning-blog --tail 120
+              exit 1
+            ) 9>/tmp/lightning-blog-deploy.lock

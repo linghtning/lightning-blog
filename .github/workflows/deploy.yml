@@ -1,0 +1,92 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  verify-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Type check
+        run: pnpm run type-check
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Package source
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            --exclude='coverage' \
+            -czf "$RUNNER_TEMP/release.tar.gz" .
+          cp "$RUNNER_TEMP/release.tar.gz" release.tar.gz
+
+      - name: Upload source
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: release.tar.gz
+          target: /opt/lightning/lightning-blog
+          timeout: 120s
+          command_timeout: 10m
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            mkdir -p /opt/lightning/lightning-blog
+            cd /opt/lightning/lightning-blog
+            rm -rf repo
+            mkdir -p repo
+            tar -xzf release.tar.gz -C repo
+            cd repo
+            cp ../.env.production .env.production
+            docker compose up -d --build
+            for i in $(seq 1 30); do
+              if curl --fail --silent --show-error http://127.0.0.1:10004/api/health; then
+                exit 0
+              fi
+              sleep 2
+            done
+            docker ps -a
+            docker logs lightning-blog --tail 120
+            exit 1

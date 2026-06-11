@@ -1,1 +1,1 @@
-{"root":["./vite.config.ts"],"version":"6.0.3"}
+{"root":["./vite.config.ts","./src/server/app.ts","./src/server/cookies.ts","./src/server/index.ts","./src/server/runtime.ts","./src/shared/blog-store.ts","./src/shared/db-blog-store.ts","./src/shared/env.ts","./src/shared/memory-blog-store.ts","./src/shared/secrets.ts","./src/shared/time.ts","./src/shared/types.ts","./src/types/css.d.ts"],"version":"6.0.3"}

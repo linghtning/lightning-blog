@@ -1,27 +1,27 @@
-import { useEffect, useState } from 'react'
-import { Calendar } from 'lucide-react'
-import { Card } from '../../components/ui/card'
-import type { Article } from '../../shared/types'
+import { useEffect, useState } from "react";
+import { Calendar } from "lucide-react";
+import { Card } from "../../components/ui/card";
+import type { Article } from "../../shared/types";
 
 export function TimelinePage() {
-  const [articles, setArticles] = useState<Article[]>([])
+  const [articles, setArticles] = useState<Article[]>([]);
 
   useEffect(() => {
-    fetch('/api/timeline')
+    fetch("/api/timeline")
       .then((res) => res.json())
-      .then((data) => setArticles(data.articles))
-  }, [])
+      .then((data) => setArticles(data.articles));
+  }, []);
 
   const groupedArticles = articles.reduce(
     (acc, article) => {
-      const date = new Date(article.publishedAt ?? article.createdAt)
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-      if (!acc[key]) acc[key] = []
-      acc[key].push(article)
-      return acc
+      const date = new Date(article.publishedAt ?? article.createdAt);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(article);
+      return acc;
     },
     {} as Record<string, Article[]>,
-  )
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -43,7 +43,9 @@ export function TimelinePage() {
                   {article.title}
                 </a>
                 <span className="text-xs text-muted mt-1 block">
-                  {new Date(article.publishedAt ?? article.createdAt).toLocaleDateString('zh-CN')}
+                  {new Date(
+                    article.publishedAt ?? article.createdAt,
+                  ).toLocaleDateString("zh-CN")}
                 </span>
               </Card>
             ))}
@@ -51,5 +53,5 @@ export function TimelinePage() {
         </div>
       ))}
     </div>
-  )
+  );
 }

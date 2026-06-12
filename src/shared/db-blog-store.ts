@@ -1,7 +1,8 @@
-import { eq, and, desc, sql, like } from 'drizzle-orm'
-import { createDbClient } from '../db/client'
-import * as schema from '../db/schema'
-import type { BlogStore } from './blog-store'
+import { eq, and, desc, sql, like } from "drizzle-orm";
+import { createDbClient } from "../db/client";
+import * as schema from "../db/schema";
+import type { BlogStore } from "./blog-store";
+import { hashToken } from "./secrets";
 import type {
   Article,
   Category,
@@ -12,9 +13,11 @@ import type {
   CreateCommentInput,
   PortalUserProfile,
   AppSession,
-} from './types'
+} from "./types";
 
 const SCHEMA_SQL = `
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TYPE article_status AS ENUM ('draft', 'published');
 CREATE TYPE user_role AS ENUM ('user', 'super_admin');
 
@@ -73,33 +76,54 @@ CREATE TABLE IF NOT EXISTS portal_user_profiles (
 CREATE TABLE IF NOT EXISTS app_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   portal_user_id TEXT NOT NULL REFERENCES portal_user_profiles(portal_user_id),
-  token TEXT NOT NULL UNIQUE,
-  portal_access_token TEXT,
+  session_token_hash TEXT NOT NULL,
+  portal_access_token TEXT NOT NULL DEFAULT '',
   expires_at TIMESTAMP NOT NULL,
   revoked_at TIMESTAMP
 );
-`
+
+ALTER TABLE app_sessions
+  ADD COLUMN IF NOT EXISTS session_token_hash TEXT;
+
+ALTER TABLE app_sessions
+  ADD COLUMN IF NOT EXISTS portal_access_token TEXT NOT NULL DEFAULT '';
+
+UPDATE app_sessions
+SET session_token_hash = encode(digest(token, 'sha256'), 'hex')
+WHERE session_token_hash IS NULL
+  AND token IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS blog_app_sessions_session_token_hash_unique
+  ON app_sessions (session_token_hash);
+
+ALTER TABLE app_sessions
+  ALTER COLUMN session_token_hash SET NOT NULL;
+`;
 
 export class DbBlogStore implements BlogStore {
-  private db: ReturnType<typeof createDbClient>
+  private db: ReturnType<typeof createDbClient>;
 
   private constructor(databaseUrl: string) {
-    this.db = createDbClient(databaseUrl)
+    this.db = createDbClient(databaseUrl);
   }
 
   static async connect(databaseUrl: string): Promise<DbBlogStore> {
-    const store = new DbBlogStore(databaseUrl)
-    await store.ensureSchema()
-    return store
+    const store = new DbBlogStore(databaseUrl);
+    await store.ensureSchema();
+    return store;
+  }
+
+  static getSchemaSql(): string {
+    return SCHEMA_SQL;
   }
 
   private async ensureSchema(): Promise<void> {
-    const statements = SCHEMA_SQL.split(';')
+    const statements = SCHEMA_SQL.split(";")
       .map((s) => s.trim())
-      .filter((s) => s.length > 0)
+      .filter((s) => s.length > 0);
     for (const statement of statements) {
       try {
-        await this.db.execute(sql.raw(statement))
+        await this.db.execute(sql.raw(statement));
       } catch {
         // Ignore duplicate object errors
       }
@@ -107,25 +131,25 @@ export class DbBlogStore implements BlogStore {
   }
 
   async listArticles(filters?: {
-    status?: 'draft' | 'published'
-    categoryId?: string
-    tagId?: string
-    authorId?: string
-    limit?: number
-    offset?: number
+    status?: "draft" | "published";
+    categoryId?: string;
+    tagId?: string;
+    authorId?: string;
+    limit?: number;
+    offset?: number;
   }): Promise<Article[]> {
-    const conditions = []
+    const conditions = [];
     if (filters?.status) {
-      conditions.push(eq(schema.articles.status, filters.status))
+      conditions.push(eq(schema.articles.status, filters.status));
     }
     if (filters?.categoryId) {
-      conditions.push(eq(schema.articles.categoryId, filters.categoryId))
+      conditions.push(eq(schema.articles.categoryId, filters.categoryId));
     }
     if (filters?.authorId) {
-      conditions.push(eq(schema.articles.authorId, filters.authorId))
+      conditions.push(eq(schema.articles.authorId, filters.authorId));
     }
 
-    let results
+    let results;
     if (conditions.length > 0) {
       results = await this.db
         .select()
@@ -133,17 +157,17 @@ export class DbBlogStore implements BlogStore {
         .where(and(...conditions))
         .orderBy(desc(schema.articles.createdAt))
         .limit(filters?.limit ?? 10)
-        .offset(filters?.offset ?? 0)
+        .offset(filters?.offset ?? 0);
     } else {
       results = await this.db
         .select()
         .from(schema.articles)
         .orderBy(desc(schema.articles.createdAt))
         .limit(filters?.limit ?? 10)
-        .offset(filters?.offset ?? 0)
+        .offset(filters?.offset ?? 0);
     }
 
-    return results.map(mapArticle)
+    return results.map(mapArticle);
   }
 
   async getArticleBySlug(slug: string): Promise<Article | null> {
@@ -151,8 +175,8 @@ export class DbBlogStore implements BlogStore {
       .select()
       .from(schema.articles)
       .where(eq(schema.articles.slug, slug))
-      .limit(1)
-    return results[0] ? mapArticle(results[0]) : null
+      .limit(1);
+    return results[0] ? mapArticle(results[0]) : null;
   }
 
   async getArticleById(id: string): Promise<Article | null> {
@@ -160,8 +184,8 @@ export class DbBlogStore implements BlogStore {
       .select()
       .from(schema.articles)
       .where(eq(schema.articles.id, id))
-      .limit(1)
-    return results[0] ? mapArticle(results[0]) : null
+      .limit(1);
+    return results[0] ? mapArticle(results[0]) : null;
   }
 
   async createArticle(input: CreateArticleInput): Promise<Article> {
@@ -176,9 +200,9 @@ export class DbBlogStore implements BlogStore {
         pinned: input.pinned ?? false,
         authorId: input.authorId,
         categoryId: input.categoryId,
-        publishedAt: input.status === 'published' ? new Date() : null,
+        publishedAt: input.status === "published" ? new Date() : null,
       })
-      .returning()
+      .returning();
 
     if (input.tagIds?.length) {
       await this.db.insert(schema.articleTags).values(
@@ -186,53 +210,50 @@ export class DbBlogStore implements BlogStore {
           articleId: results[0].id,
           tagId,
         })),
-      )
+      );
     }
 
-    return mapArticle(results[0])
+    return mapArticle(results[0]);
   }
 
-  async updateArticle(
-    id: string,
-    input: UpdateArticleInput,
-  ): Promise<Article> {
-    const updates: Record<string, unknown> = { updatedAt: new Date() }
-    if (input.title !== undefined) updates.title = input.title
-    if (input.slug !== undefined) updates.slug = input.slug
-    if (input.content !== undefined) updates.content = input.content
-    if (input.excerpt !== undefined) updates.excerpt = input.excerpt
+  async updateArticle(id: string, input: UpdateArticleInput): Promise<Article> {
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (input.title !== undefined) updates.title = input.title;
+    if (input.slug !== undefined) updates.slug = input.slug;
+    if (input.content !== undefined) updates.content = input.content;
+    if (input.excerpt !== undefined) updates.excerpt = input.excerpt;
     if (input.status !== undefined) {
-      updates.status = input.status
-      if (input.status === 'published') updates.publishedAt = new Date()
+      updates.status = input.status;
+      if (input.status === "published") updates.publishedAt = new Date();
     }
-    if (input.pinned !== undefined) updates.pinned = input.pinned
-    if (input.categoryId !== undefined) updates.categoryId = input.categoryId
+    if (input.pinned !== undefined) updates.pinned = input.pinned;
+    if (input.categoryId !== undefined) updates.categoryId = input.categoryId;
 
     const results = await this.db
       .update(schema.articles)
       .set(updates)
       .where(eq(schema.articles.id, id))
-      .returning()
+      .returning();
 
     if (input.tagIds) {
       await this.db
         .delete(schema.articleTags)
-        .where(eq(schema.articleTags.articleId, id))
+        .where(eq(schema.articleTags.articleId, id));
       if (input.tagIds.length) {
         await this.db.insert(schema.articleTags).values(
           input.tagIds.map((tagId) => ({
             articleId: id,
             tagId,
           })),
-        )
+        );
       }
     }
 
-    return mapArticle(results[0])
+    return mapArticle(results[0]);
   }
 
   async deleteArticle(id: string): Promise<void> {
-    await this.db.delete(schema.articles).where(eq(schema.articles.id, id))
+    await this.db.delete(schema.articles).where(eq(schema.articles.id, id));
   }
 
   async searchArticles(query: string): Promise<Article[]> {
@@ -241,17 +262,17 @@ export class DbBlogStore implements BlogStore {
       .from(schema.articles)
       .where(
         and(
-          eq(schema.articles.status, 'published'),
+          eq(schema.articles.status, "published"),
           like(schema.articles.title, `%${query}%`),
         ),
       )
-      .orderBy(desc(schema.articles.createdAt))
-    return results.map(mapArticle)
+      .orderBy(desc(schema.articles.createdAt));
+    return results.map(mapArticle);
   }
 
   async listCategories(): Promise<Category[]> {
-    const results = await this.db.select().from(schema.categories)
-    return results.map(mapCategory)
+    const results = await this.db.select().from(schema.categories);
+    return results.map(mapCategory);
   }
 
   async getCategoryBySlug(slug: string): Promise<Category | null> {
@@ -259,21 +280,21 @@ export class DbBlogStore implements BlogStore {
       .select()
       .from(schema.categories)
       .where(eq(schema.categories.slug, slug))
-      .limit(1)
-    return results[0] ? mapCategory(results[0]) : null
+      .limit(1);
+    return results[0] ? mapCategory(results[0]) : null;
   }
 
   async createCategory(input: {
-    name: string
-    slug: string
-    description?: string
-    parentId?: string
+    name: string;
+    slug: string;
+    description?: string;
+    parentId?: string;
   }): Promise<Category> {
     const results = await this.db
       .insert(schema.categories)
       .values(input)
-      .returning()
-    return mapCategory(results[0])
+      .returning();
+    return mapCategory(results[0]);
   }
 
   async updateCategory(
@@ -284,19 +305,17 @@ export class DbBlogStore implements BlogStore {
       .update(schema.categories)
       .set(input)
       .where(eq(schema.categories.id, id))
-      .returning()
-    return mapCategory(results[0])
+      .returning();
+    return mapCategory(results[0]);
   }
 
   async deleteCategory(id: string): Promise<void> {
-    await this.db
-      .delete(schema.categories)
-      .where(eq(schema.categories.id, id))
+    await this.db.delete(schema.categories).where(eq(schema.categories.id, id));
   }
 
   async listTags(): Promise<Tag[]> {
-    const results = await this.db.select().from(schema.tags)
-    return results.map(mapTag)
+    const results = await this.db.select().from(schema.tags);
+    return results.map(mapTag);
   }
 
   async getTagBySlug(slug: string): Promise<Tag | null> {
@@ -304,20 +323,17 @@ export class DbBlogStore implements BlogStore {
       .select()
       .from(schema.tags)
       .where(eq(schema.tags.slug, slug))
-      .limit(1)
-    return results[0] ? mapTag(results[0]) : null
+      .limit(1);
+    return results[0] ? mapTag(results[0]) : null;
   }
 
   async createTag(input: { name: string; slug: string }): Promise<Tag> {
-    const results = await this.db
-      .insert(schema.tags)
-      .values(input)
-      .returning()
-    return mapTag(results[0])
+    const results = await this.db.insert(schema.tags).values(input).returning();
+    return mapTag(results[0]);
   }
 
   async deleteTag(id: string): Promise<void> {
-    await this.db.delete(schema.tags).where(eq(schema.tags.id, id))
+    await this.db.delete(schema.tags).where(eq(schema.tags.id, id));
   }
 
   async listCommentsByArticle(articleId: string): Promise<Comment[]> {
@@ -325,22 +341,20 @@ export class DbBlogStore implements BlogStore {
       .select()
       .from(schema.comments)
       .where(eq(schema.comments.articleId, articleId))
-      .orderBy(schema.comments.createdAt)
-    return results.map(mapComment)
+      .orderBy(schema.comments.createdAt);
+    return results.map(mapComment);
   }
 
   async createComment(input: CreateCommentInput): Promise<Comment> {
     const results = await this.db
       .insert(schema.comments)
       .values(input)
-      .returning()
-    return mapComment(results[0])
+      .returning();
+    return mapComment(results[0]);
   }
 
   async deleteComment(id: string): Promise<void> {
-    await this.db
-      .delete(schema.comments)
-      .where(eq(schema.comments.id, id))
+    await this.db.delete(schema.comments).where(eq(schema.comments.id, id));
   }
 
   async upsertProfile(profile: PortalUserProfile): Promise<void> {
@@ -350,48 +364,46 @@ export class DbBlogStore implements BlogStore {
       .onConflictDoUpdate({
         target: schema.portalUserProfiles.portalUserId,
         set: profile,
-      })
+      });
   }
 
-  async getProfile(
-    portalUserId: string,
-  ): Promise<PortalUserProfile | null> {
+  async getProfile(portalUserId: string): Promise<PortalUserProfile | null> {
     const results = await this.db
       .select()
       .from(schema.portalUserProfiles)
       .where(eq(schema.portalUserProfiles.portalUserId, portalUserId))
-      .limit(1)
-    return results[0] ? mapProfile(results[0]) : null
+      .limit(1);
+    return results[0] ? mapProfile(results[0]) : null;
   }
 
   async createSession(input: {
-    portalUserId: string
-    token: string
-    portalAccessToken?: string
-    expiresAt: Date
+    portalUserId: string;
+    token: string;
+    portalAccessToken: string;
+    expiresAt: Date;
   }): Promise<void> {
     await this.db.insert(schema.appSessions).values({
       portalUserId: input.portalUserId,
-      token: input.token,
+      sessionTokenHash: hashToken(input.token),
       portalAccessToken: input.portalAccessToken,
       expiresAt: input.expiresAt,
-    })
+    });
   }
 
   async findSessionByToken(token: string): Promise<AppSession | null> {
     const results = await this.db
       .select()
       .from(schema.appSessions)
-      .where(eq(schema.appSessions.token, token))
-      .limit(1)
-    return results[0] ? mapSession(results[0]) : null
+      .where(eq(schema.appSessions.sessionTokenHash, hashToken(token)))
+      .limit(1);
+    return results[0] ? mapSession(results[0]) : null;
   }
 
   async revokeSessionByToken(token: string): Promise<void> {
     await this.db
       .update(schema.appSessions)
       .set({ revokedAt: new Date() })
-      .where(eq(schema.appSessions.token, token))
+      .where(eq(schema.appSessions.sessionTokenHash, hashToken(token)));
   }
 }
 
@@ -409,7 +421,7 @@ function mapArticle(row: typeof schema.articles.$inferSelect): Article {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     publishedAt: row.publishedAt,
-  }
+  };
 }
 
 function mapCategory(row: typeof schema.categories.$inferSelect): Category {
@@ -419,7 +431,7 @@ function mapCategory(row: typeof schema.categories.$inferSelect): Category {
     slug: row.slug,
     description: row.description,
     parentId: row.parentId,
-  }
+  };
 }
 
 function mapTag(row: typeof schema.tags.$inferSelect): Tag {
@@ -427,7 +439,7 @@ function mapTag(row: typeof schema.tags.$inferSelect): Tag {
     id: row.id,
     name: row.name,
     slug: row.slug,
-  }
+  };
 }
 
 function mapComment(row: typeof schema.comments.$inferSelect): Comment {
@@ -438,7 +450,7 @@ function mapComment(row: typeof schema.comments.$inferSelect): Comment {
     authorId: row.authorId,
     parentId: row.parentId,
     createdAt: row.createdAt,
-  }
+  };
 }
 
 function mapProfile(
@@ -450,16 +462,16 @@ function mapProfile(
     displayName: row.displayName,
     avatarUrl: row.avatarUrl,
     role: row.role,
-  }
+  };
 }
 
 function mapSession(row: typeof schema.appSessions.$inferSelect): AppSession {
   return {
     id: row.id,
     portalUserId: row.portalUserId,
-    token: row.token,
+    sessionTokenHash: row.sessionTokenHash,
     portalAccessToken: row.portalAccessToken,
     expiresAt: row.expiresAt,
     revokedAt: row.revokedAt,
-  }
+  };
 }

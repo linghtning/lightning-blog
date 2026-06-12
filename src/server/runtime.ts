@@ -1,21 +1,21 @@
-import { AccessService } from '../modules/access/access.service'
-import { OpenidClientAdapter } from '../modules/access/oidc-client'
-import { readEnv, type BlogEnv } from '../shared/env'
-import { DbBlogStore } from '../shared/db-blog-store'
-import { MemoryBlogStore } from '../shared/memory-blog-store'
-import type { BlogStore } from '../shared/blog-store'
+import { AccessService } from "../modules/access/access.service";
+import { OpenidClientAdapter } from "../modules/access/oidc-client";
+import { readEnv, type BlogEnv } from "../shared/env";
+import { DbBlogStore } from "../shared/db-blog-store";
+import { MemoryBlogStore } from "../shared/memory-blog-store";
+import type { BlogStore } from "../shared/blog-store";
 
 export type BlogRuntime = {
-  env: BlogEnv
-  store: BlogStore
-  access: AccessService
-}
+  env: BlogEnv;
+  store: BlogStore;
+  access: AccessService;
+};
 
 export async function createRuntime(): Promise<BlogRuntime> {
-  const env = readEnv()
+  const env = readEnv();
   const store = env.DATABASE_URL
     ? await DbBlogStore.connect(env.DATABASE_URL)
-    : new MemoryBlogStore()
+    : new MemoryBlogStore();
   const access = new AccessService({
     store,
     config: {
@@ -29,6 +29,6 @@ export async function createRuntime(): Promise<BlogRuntime> {
       clientId: env.OIDC_CLIENT_ID,
       redirectUri: env.SSO_CALLBACK_URL,
     }),
-  })
-  return { env, store, access }
+  });
+  return { env, store, access };
 }

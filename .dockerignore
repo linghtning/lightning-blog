@@ -4,4 +4,8 @@ dist
 .github
 .env
 .env.*
-*.md
+coverage
+*.log
+release.tar.gz
+*.local
+*.tsbuildinfo

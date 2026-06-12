@@ -1,12 +1,12 @@
-import { Pin, Clock } from 'lucide-react'
-import { Card } from '../../components/ui/card'
-import { Badge } from '../../components/ui/badge'
-import { formatRelativeTime } from '../../shared/time'
-import type { Article } from '../../shared/types'
+import { Pin, Clock } from "lucide-react";
+import { Card } from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
+import { formatRelativeTime } from "../../shared/time";
+import type { Article } from "../../shared/types";
 
 type ArticleCardProps = {
-  article: Article
-}
+  article: Article;
+};
 
 export function ArticleCard({ article }: ArticleCardProps) {
   return (
@@ -32,5 +32,5 @@ export function ArticleCard({ article }: ArticleCardProps) {
         )}
       </a>
     </Card>
-  )
+  );
 }

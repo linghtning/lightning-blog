@@ -1,11 +1,11 @@
-import { Calendar, User } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import rehypeHighlight from 'rehype-highlight'
-import type { Article } from '../../shared/types'
+import { Calendar, User } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import type { Article } from "../../shared/types";
 
 type ArticleDetailProps = {
-  article: Article
-}
+  article: Article;
+};
 
 export function ArticleDetail({ article }: ArticleDetailProps) {
   return (
@@ -15,7 +15,9 @@ export function ArticleDetail({ article }: ArticleDetailProps) {
       <div className="flex items-center gap-4 text-sm text-muted mb-8">
         <span className="flex items-center gap-1">
           <Calendar className="w-4 h-4" />
-          {new Date(article.publishedAt ?? article.createdAt).toLocaleDateString('zh-CN')}
+          {new Date(
+            article.publishedAt ?? article.createdAt,
+          ).toLocaleDateString("zh-CN")}
         </span>
         <span className="flex items-center gap-1">
           <User className="w-4 h-4" />
@@ -29,5 +31,5 @@ export function ArticleDetail({ article }: ArticleDetailProps) {
         </ReactMarkdown>
       </div>
     </article>
-  )
+  );
 }

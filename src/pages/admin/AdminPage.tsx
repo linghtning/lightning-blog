@@ -1,28 +1,33 @@
-import { useEffect, useState } from 'react'
-import { FileText, FolderOpen, Tag } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
-import { AdminLayout } from '../../layouts/AdminLayout'
+import { useEffect, useState } from "react";
+import { FileText, FolderOpen, Tag } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { AdminLayout } from "../../layouts/AdminLayout";
 
 export function AdminPage() {
   const [stats, setStats] = useState({
     articles: 0,
     categories: 0,
     tags: 0,
-  })
+  });
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/articles?limit=1000').then((res) => res.json()),
-      fetch('/api/categories').then((res) => res.json()),
-      fetch('/api/tags').then((res) => res.json()),
+      fetch("/api/articles?limit=1000").then((res) => res.json()),
+      fetch("/api/categories").then((res) => res.json()),
+      fetch("/api/tags").then((res) => res.json()),
     ]).then(([articles, categories, tags]) => {
       setStats({
         articles: articles.articles?.length ?? 0,
         categories: categories.categories?.length ?? 0,
         tags: tags.tags?.length ?? 0,
-      })
-    })
-  }, [])
+      });
+    });
+  }, []);
 
   return (
     <AdminLayout currentPath="/admin">
@@ -60,5 +65,5 @@ export function AdminPage() {
         </Card>
       </div>
     </AdminLayout>
-  )
+  );
 }

@@ -1,11 +1,11 @@
-import { Trash2 } from 'lucide-react'
-import { formatRelativeTime } from '../../shared/time'
-import type { Comment } from '../../shared/types'
+import { Trash2 } from "lucide-react";
+import { formatRelativeTime } from "../../shared/time";
+import type { Comment } from "../../shared/types";
 
 type CommentItemProps = {
-  comment: Comment
-  onDelete?: (id: string) => void
-}
+  comment: Comment;
+  onDelete?: (id: string) => void;
+};
 
 export function CommentItem({ comment, onDelete }: CommentItemProps) {
   return (
@@ -28,5 +28,5 @@ export function CommentItem({ comment, onDelete }: CommentItemProps) {
       </div>
       <p className="text-foreground whitespace-pre-wrap">{comment.content}</p>
     </div>
-  )
+  );
 }

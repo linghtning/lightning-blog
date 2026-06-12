@@ -1,25 +1,25 @@
-import { useEffect, useState } from 'react'
-import { Search } from 'lucide-react'
-import { Input } from '../../components/ui/input'
-import { ArticleList } from '../../features/articles/ArticleList'
-import type { Article } from '../../shared/types'
+import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+import { Input } from "../../components/ui/input";
+import { ArticleList } from "../../features/articles/ArticleList";
+import type { Article } from "../../shared/types";
 
 export function HomePage() {
-  const [articles, setArticles] = useState<Article[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch('/api/articles?status=published&limit=20')
+    fetch("/api/articles?status=published&limit=20")
       .then((res) => res.json())
-      .then((data) => setArticles(data.articles))
-  }, [])
+      .then((data) => setArticles(data.articles));
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`
+      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
     }
-  }
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -42,5 +42,5 @@ export function HomePage() {
 
       <ArticleList articles={articles} />
     </div>
-  )
+  );
 }

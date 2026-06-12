@@ -16,19 +16,19 @@ A personal blog system that follows the same architectural patterns as the exist
 
 ### Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 19 + Vite 8 + TypeScript 6 |
-| Styling | Tailwind CSS v4 + shadcn/ui components |
-| Backend | Hono 4 + @hono/node-server |
-| Database | PostgreSQL 17 + Drizzle ORM |
-| Auth | OpenID Connect (openid-client v6) |
-| Validation | Zod v4 |
-| Package Manager | pnpm 10.33 |
-| Testing | Vitest 4 |
-| Linting | oxlint |
-| Containerization | Docker + Docker Compose |
-| CI/CD | GitHub Actions |
+| Layer            | Technology                             |
+| ---------------- | -------------------------------------- |
+| Frontend         | React 19 + Vite 8 + TypeScript 6       |
+| Styling          | Tailwind CSS v4 + shadcn/ui components |
+| Backend          | Hono 4 + @hono/node-server             |
+| Database         | PostgreSQL 17 + Drizzle ORM            |
+| Auth             | OpenID Connect (openid-client v6)      |
+| Validation       | Zod v4                                 |
+| Package Manager  | pnpm 10.33                             |
+| Testing          | Vitest 4                               |
+| Linting          | oxlint                                 |
+| Containerization | Docker + Docker Compose                |
+| CI/CD            | GitHub Actions                         |
 
 ### Project Structure
 
@@ -115,75 +115,83 @@ lightning-blog/
 ## Data Models
 
 ### articles
-| Column | Type | Description |
-|---|---|---|
-| id | uuid | Primary key |
-| title | text | Article title |
-| slug | text | URL-friendly identifier (unique) |
-| content | text | Markdown content |
-| excerpt | text | Short summary (auto-generated or manual) |
-| status | enum | draft, published |
-| pinned | boolean | Whether article is pinned to top |
-| author_id | text | Portal user ID |
-| category_id | uuid | FK to categories |
-| created_at | timestamp | Creation time |
-| updated_at | timestamp | Last update time |
-| published_at | timestamp | Publication time |
+
+| Column       | Type      | Description                              |
+| ------------ | --------- | ---------------------------------------- |
+| id           | uuid      | Primary key                              |
+| title        | text      | Article title                            |
+| slug         | text      | URL-friendly identifier (unique)         |
+| content      | text      | Markdown content                         |
+| excerpt      | text      | Short summary (auto-generated or manual) |
+| status       | enum      | draft, published                         |
+| pinned       | boolean   | Whether article is pinned to top         |
+| author_id    | text      | Portal user ID                           |
+| category_id  | uuid      | FK to categories                         |
+| created_at   | timestamp | Creation time                            |
+| updated_at   | timestamp | Last update time                         |
+| published_at | timestamp | Publication time                         |
 
 ### categories
-| Column | Type | Description |
-|---|---|---|
-| id | uuid | Primary key |
-| name | text | Display name |
-| slug | text | URL-friendly identifier (unique) |
-| description | text | Optional description |
-| parent_id | uuid | Self-referential FK for hierarchy |
+
+| Column      | Type | Description                       |
+| ----------- | ---- | --------------------------------- |
+| id          | uuid | Primary key                       |
+| name        | text | Display name                      |
+| slug        | text | URL-friendly identifier (unique)  |
+| description | text | Optional description              |
+| parent_id   | uuid | Self-referential FK for hierarchy |
 
 ### tags
-| Column | Type | Description |
-|---|---|---|
-| id | uuid | Primary key |
-| name | text | Display name |
-| slug | text | URL-friendly identifier (unique) |
+
+| Column | Type | Description                      |
+| ------ | ---- | -------------------------------- |
+| id     | uuid | Primary key                      |
+| name   | text | Display name                     |
+| slug   | text | URL-friendly identifier (unique) |
 
 ### article_tags
-| Column | Type | Description |
-|---|---|---|
+
+| Column     | Type | Description    |
+| ---------- | ---- | -------------- |
 | article_id | uuid | FK to articles |
-| tag_id | uuid | FK to tags |
+| tag_id     | uuid | FK to tags     |
 
 ### comments
-| Column | Type | Description |
-|---|---|---|
-| id | uuid | Primary key |
-| content | text | Comment text |
-| article_id | uuid | FK to articles |
-| author_id | text | Portal user ID |
-| parent_id | uuid | Self-referential FK for replies |
-| created_at | timestamp | Creation time |
+
+| Column     | Type      | Description                     |
+| ---------- | --------- | ------------------------------- |
+| id         | uuid      | Primary key                     |
+| content    | text      | Comment text                    |
+| article_id | uuid      | FK to articles                  |
+| author_id  | text      | Portal user ID                  |
+| parent_id  | uuid      | Self-referential FK for replies |
+| created_at | timestamp | Creation time                   |
 
 ### portal_user_profiles (reuse pattern)
-| Column | Type | Description |
-|---|---|---|
+
+| Column         | Type | Description         |
+| -------------- | ---- | ------------------- |
 | portal_user_id | text | Portal user ID (PK) |
-| username | text | Username |
-| display_name | text | Display name |
-| avatar_url | text | Avatar URL |
-| role | enum | user, super_admin |
+| username       | text | Username            |
+| display_name   | text | Display name        |
+| avatar_url     | text | Avatar URL          |
+| role           | enum | user, super_admin   |
 
 ### app_sessions (reuse pattern)
-| Column | Type | Description |
-|---|---|---|
-| id | uuid | Primary key |
-| portal_user_id | text | FK to portal_user_profiles |
-| token | text | Session token (SHA-256 hashed) |
-| portal_access_token | text | OIDC access token |
-| expires_at | timestamp | Session expiry |
-| revoked_at | timestamp | Revocation time |
+
+| Column              | Type      | Description                    |
+| ------------------- | --------- | ------------------------------ |
+| id                  | uuid      | Primary key                    |
+| portal_user_id      | text      | FK to portal_user_profiles     |
+| token               | text      | Session token (SHA-256 hashed) |
+| portal_access_token | text      | OIDC access token              |
+| expires_at          | timestamp | Session expiry                 |
+| revoked_at          | timestamp | Revocation time                |
 
 ## API Routes
 
 ### Public Routes
+
 ```
 GET    /api/articles              # List articles (paginated, filterable)
 GET    /api/articles/:slug        # Get article by slug
@@ -197,6 +205,7 @@ GET    /api/timeline              # Timeline data
 ```
 
 ### Authenticated Routes
+
 ```
 POST   /api/articles              # Create article
 PUT    /api/articles/:id          # Update article
@@ -211,6 +220,7 @@ DELETE /api/comments/:id          # Delete comment
 ```
 
 ### Auth Routes
+
 ```
 GET    /auth/login                # Initiate Portal SSO login
 GET    /auth/callback             # OIDC callback handler
@@ -231,43 +241,48 @@ Reuse the OIDC pattern from `lightning-reading-h5`:
 
 ## Pages
 
-| Route | Page | Description |
-|---|---|---|
-| `/` | HomePage | Latest articles, pinned articles, categories sidebar |
-| `/articles/:slug` | ArticlePage | Full article with comments |
-| `/categories/:slug` | CategoryPage | Articles in category |
-| `/tags/:slug` | TagPage | Articles with tag |
-| `/timeline` | TimelinePage | Chronological article list |
-| `/search?q=` | SearchPage | Search results |
-| `/admin` | AdminPage | Dashboard (article count, recent activity) |
-| `/admin/articles` | ArticleManagePage | Article list with status filters |
-| `/admin/articles/new` | ArticleEditorPage | New article editor |
-| `/admin/articles/:id/edit` | ArticleEditorPage | Edit article editor |
-| `/admin/categories` | CategoryManagePage | Category management |
-| `/admin/tags` | TagManagePage | Tag management |
-| `/callback` | CallbackPage | OIDC callback handler |
-| `/access-denied` | AccessDeniedPage | Unauthorized page |
+| Route                      | Page               | Description                                          |
+| -------------------------- | ------------------ | ---------------------------------------------------- |
+| `/`                        | HomePage           | Latest articles, pinned articles, categories sidebar |
+| `/articles/:slug`          | ArticlePage        | Full article with comments                           |
+| `/categories/:slug`        | CategoryPage       | Articles in category                                 |
+| `/tags/:slug`              | TagPage            | Articles with tag                                    |
+| `/timeline`                | TimelinePage       | Chronological article list                           |
+| `/search?q=`               | SearchPage         | Search results                                       |
+| `/admin`                   | AdminPage          | Dashboard (article count, recent activity)           |
+| `/admin/articles`          | ArticleManagePage  | Article list with status filters                     |
+| `/admin/articles/new`      | ArticleEditorPage  | New article editor                                   |
+| `/admin/articles/:id/edit` | ArticleEditorPage  | Edit article editor                                  |
+| `/admin/categories`        | CategoryManagePage | Category management                                  |
+| `/admin/tags`              | TagManagePage      | Tag management                                       |
+| `/callback`                | CallbackPage       | OIDC callback handler                                |
+| `/access-denied`           | AccessDeniedPage   | Unauthorized page                                    |
 
 ## Key Patterns
 
 ### Dual Store Architecture
+
 - `BlogStore` interface defines data access contract
 - `DbBlogStore`: PostgreSQL via Drizzle ORM (production)
 - `MemoryBlogStore`: In-memory Maps (development)
 - Runtime selects implementation based on `DATABASE_URL`
 
 ### Runtime Composition Root
+
 `createRuntime()` wires all dependencies: env config, store, access service, blog services. No global singletons.
 
 ### Middleware-Based Auth
+
 Protected routes use Hono middleware to check session cookie. Returns 401 if unauthorized.
 
 ### Markdown Rendering
+
 - Editor: Textarea with live preview using `react-markdown` or similar
 - Content stored as raw Markdown in database
 - Rendered on frontend with syntax highlighting (e.g., `rehype-highlight`)
 
 ### Image Handling
+
 - Article images uploaded to server or external URLs
 - Server proxies images with proper referer headers if needed
 - Optional: integrate with external image storage

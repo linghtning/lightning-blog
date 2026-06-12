@@ -1,4 +1,12 @@
-const BASE_URL = ''
+const BASE_URL = "";
+
+export type PortalSnapshotUser = {
+  portalUserId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  role: "user" | "super_admin";
+};
 
 export async function requestJson<T>(
   path: string,
@@ -6,20 +14,20 @@ export async function requestJson<T>(
 ): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    credentials: 'include',
+    credentials: "include",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options?.headers,
     },
-  })
+  });
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw new Error(`API error: ${response.status}`);
   }
 
-  return response.json()
+  return response.json();
 }
 
 export async function getPortalSnapshot() {
-  return requestJson<{ user: { displayName: string; avatarUrl: string | null } | null }>('/api/auth/me')
+  return requestJson<{ user: PortalSnapshotUser | null }>("/api/auth/me");
 }

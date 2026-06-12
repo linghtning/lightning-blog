@@ -1,38 +1,49 @@
-import { useState } from 'react'
-import { BookOpen, Menu, X, LogOut } from 'lucide-react'
-import { cn } from '../lib/utils'
+import { useState } from "react";
+import { BookOpen, Menu, X, LogOut } from "lucide-react";
 
 type AppLayoutProps = {
-  children: React.ReactNode
-  user: { displayName: string; avatarUrl: string | null } | null
-}
+  children: React.ReactNode;
+  user: { displayName: string; avatarUrl: string | null } | null;
+};
 
 export function AppLayout({ children, user }: AppLayoutProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    await fetch('/auth/logout', { method: 'POST', credentials: 'include' })
-    window.location.href = '/'
-  }
+    await fetch("/auth/logout", { method: "POST", credentials: "include" });
+    window.location.href = "/";
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 text-foreground hover:text-primary transition-colors">
+          <a
+            href="/"
+            className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+          >
             <BookOpen className="w-6 h-6" />
             <span className="font-bold text-lg">Lightning Blog</span>
           </a>
 
           <nav className="hidden md:flex items-center gap-6">
-            <a href="/" className="text-muted hover:text-foreground transition-colors">
+            <a
+              href="/"
+              className="text-muted hover:text-foreground transition-colors"
+            >
               首页
             </a>
-            <a href="/timeline" className="text-muted hover:text-foreground transition-colors">
+            <a
+              href="/timeline"
+              className="text-muted hover:text-foreground transition-colors"
+            >
               时间线
             </a>
             {user && (
-              <a href="/admin" className="text-muted hover:text-foreground transition-colors">
+              <a
+                href="/admin"
+                className="text-muted hover:text-foreground transition-colors"
+              >
                 管理
               </a>
             )}
@@ -64,7 +75,11 @@ export function AppLayout({ children, user }: AppLayoutProps) {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden text-muted hover:text-foreground"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </button>
           </div>
         </div>
@@ -96,5 +111,5 @@ export function AppLayout({ children, user }: AppLayoutProps) {
         <p>Powered by Lightning Blog</p>
       </footer>
     </div>
-  )
+  );
 }

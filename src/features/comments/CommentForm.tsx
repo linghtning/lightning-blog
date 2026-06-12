@@ -1,27 +1,27 @@
-import { useState } from 'react'
-import { Button } from '../../components/ui/button'
-import { Textarea } from '../../components/ui/textarea'
+import { useState } from "react";
+import { Button } from "../../components/ui/button";
+import { Textarea } from "../../components/ui/textarea";
 
 type CommentFormProps = {
-  onSubmit: (content: string) => Promise<void>
-}
+  onSubmit: (content: string) => Promise<void>;
+};
 
 export function CommentForm({ onSubmit }: CommentFormProps) {
-  const [content, setContent] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const [content, setContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!content.trim()) return
-    
-    setSubmitting(true)
+    e.preventDefault();
+    if (!content.trim()) return;
+
+    setSubmitting(true);
     try {
-      await onSubmit(content)
-      setContent('')
+      await onSubmit(content);
+      setContent("");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -37,5 +37,5 @@ export function CommentForm({ onSubmit }: CommentFormProps) {
         </Button>
       </div>
     </form>
-  )
+  );
 }

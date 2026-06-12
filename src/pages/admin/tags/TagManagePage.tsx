@@ -1,48 +1,48 @@
-import { useEffect, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Card } from '../../../components/ui/card'
-import { Badge } from '../../../components/ui/badge'
-import { AdminLayout } from '../../../layouts/AdminLayout'
-import type { Tag } from '../../../shared/types'
+import { useEffect, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Card } from "../../../components/ui/card";
+import { Badge } from "../../../components/ui/badge";
+import { AdminLayout } from "../../../layouts/AdminLayout";
+import type { Tag } from "../../../shared/types";
 
 export function TagManagePage() {
-  const [tags, setTags] = useState<Tag[]>([])
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
 
   useEffect(() => {
-    fetch('/api/tags')
+    fetch("/api/tags")
       .then((res) => res.json())
-      .then((data) => setTags(data.tags))
-  }, [])
+      .then((data) => setTags(data.tags));
+  }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name || !slug) return
-    const res = await fetch('/api/tags', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+    e.preventDefault();
+    if (!name || !slug) return;
+    const res = await fetch("/api/tags", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, slug }),
-    })
+    });
     if (res.ok) {
-      const data = await res.json()
-      setTags([...tags, data.tag])
-      setName('')
-      setSlug('')
+      const data = await res.json();
+      setTags([...tags, data.tag]);
+      setName("");
+      setSlug("");
     }
-  }
+  };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定删除此标签？')) return
+    if (!confirm("确定删除此标签？")) return;
     await fetch(`/api/tags/${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
-    setTags(tags.filter((t) => t.id !== id))
-  }
+      method: "DELETE",
+      credentials: "include",
+    });
+    setTags(tags.filter((t) => t.id !== id));
+  };
 
   return (
     <AdminLayout currentPath="/admin/tags">
@@ -53,8 +53,16 @@ export function TagManagePage() {
       <Card className="p-6 mb-8">
         <h2 className="text-lg font-semibold mb-4">新建标签</h2>
         <form onSubmit={handleCreate} className="flex gap-3">
-          <Input placeholder="标签名称" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="URL slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
+          <Input
+            placeholder="标签名称"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            placeholder="URL slug"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+          />
           <Button type="submit" disabled={!name || !slug}>
             <Plus className="w-4 h-4 mr-2" />
             创建
@@ -80,5 +88,5 @@ export function TagManagePage() {
         )}
       </div>
     </AdminLayout>
-  )
+  );
 }
